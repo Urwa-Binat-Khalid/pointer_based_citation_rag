@@ -21,8 +21,6 @@ SYSTEM_A2 = (
 assert "model" in globals() and "SYSTEM_B" in globals() and "gen" in globals() \
     and "parse_json" in globals(), "run qwen_setup_helpers.py first"
 
-# In the original run this file was called pubmedqa_fresh300.json.
-# build_dataset.py writes the same questions to data/fresh300.json.
 FRESH_FILE = "pubmedqa_fresh300.json"
 fresh = json.load(open(FRESH_FILE))
 OUT = "results_fresh300.json"
