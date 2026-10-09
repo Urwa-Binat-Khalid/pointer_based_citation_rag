@@ -1,16 +1,4 @@
 #File 1: src/build_dataset.py
-"""
-Build the numbered sentence data for the pointer citation experiments.
-
-Outputs (written to the data folder):
-    dev200.json           first 200 PubMedQA questions (development set, full text)
-    fresh300.json         300 fresh yes/no questions (test set, full text)
-    dev200_ids.json       ids only, safe to publish
-    fresh300_ids.json     ids only, safe to publish
-
-The full text files contain abstracts, so keep them out of git (see .gitignore).
-Anyone can rebuild them by running this script.
-"""
 import json
 import re
 from pathlib import Path
