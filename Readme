@@ -1,0 +1,124 @@
+# Pointer Based Citation for Medical RAG
+
+A pilot study by Urwa Binat Khalid (independent researcher). Not peer reviewed. The numbers below are descriptive results from small experiments.
+
+## What this project is
+
+In RAG, a model is often asked to cite its source. That citation is text the model writes itself, so it can be copied wrongly, reworded or invented, and it costs output tokens. This project tests an alternative: the model outputs only a pointer (a sentence ID such as S7), and ordinary code fetches the real sentence from the document.
+
+Three systems were compared:
+
+1. System A, free text quote: the model answers yes or no and copies the supporting sentence.
+2. System B, pointer: the model answers yes or no and outputs up to 3 sentence IDs. Code fetches the text. The model never types a quote.
+3. System C, pointer plus NLI check: System B, then a separate NLI model checks whether the fetched sentences support the answer. The same checker was also applied to System A for a fair comparison.
+
+A pointer guarantees that the quoted text exists in the document. It does not guarantee that the answer follows from that text, and it does not guarantee that the source is correct.
+
+## Setup
+
+Data: PubMedQA labeled subset, abstracts split into numbered sentences. Only yes and no questions were used. Questions 0 to 199 were the development set, where the pipeline and prompts were built. The test set is 300 fresh questions (ids 200 to 532, 62 percent yes) that were not used for development. Prompts were frozen before the test.
+
+Models, both run in 4 bit on a free Kaggle GPU: Qwen 2.5 7B Instruct and IBM Granite 3.3 8B Instruct. Qwen 2.5 3B Instruct was used only in early development.
+
+Checker: a general DeBERTa v3 NLI model. The same model that gave the answer rewrote question and answer as one claim, and the NLI model compared that claim with the pointed or quoted sentences.
+
+## Results on the 300 fresh questions
+
+Token cost (output tokens per answer, copied quote against pointer):
+
+1. Qwen: 54.7 against 20.1. The pointer saves 34.6 tokens (95 percent interval 31.8 to 37.5).
+2. Granite: 66.0 against 24.8. The pointer saves 41.2 tokens (95 percent interval 37.3 to 45.2).
+3. Pointers cost about 2.7 times fewer answer tokens in both models. With the checker claim step added, the saving is about 1.8 to 1.9 times, because the claim step adds about 19 tokens.
+
+Accuracy (copied quote against pointer):
+
+1. Qwen: 79.7 percent against 82.0 percent. Difference plus 2.3 points, interval minus 0.7 to 5.7.
+2. Granite: 83.0 percent against 84.3 percent. Difference plus 1.3 points, interval minus 1.7 to 4.3.
+3. All accuracy intervals include zero, so the two formats are statistically equal. The always yes baseline is 62 percent.
+
+
+| Checker results, 300 fresh questions              | Qwen: A plus NLI     | Qwen: C              | Granite: A plus NLI  | Granite: C           |
+| ------------------------------------------------- | -------------------- | -------------------- | -------------------- | -------------------- |
+| Tokens per answer, with claim step                | 74.2                 | 39.4                 | 91.0                 | 49.5                 |
+| Accuracy with no checker                          | 79.7%                | 82.0%                | 83.0%                | 84.3%                |
+| Unless contradiction: wrong rejected              | 9 of 61              | 6 of 54              | 4 of 51              | 5 of 47              |
+| Unless contradiction: correct rejected            | 10 of 239            | 13 of 246            | 12 of 249            | 10 of 253            |
+| Unless contradiction: accuracy                    | 81.5%                | 82.9%                | 83.5%                | 85.3%                |
+| Entailment only: coverage, accuracy               | 7%, 90.5%            | 18%, 87.3%           | 9%, 96.4%            | 17%, 90.4%           |
+| Entailment only: wrong rejected, correct rejected | 59 of 61, 220 of 239 | 47 of 54, 198 of 246 | 50 of 51, 222 of 249 | 42 of 47, 206 of 253 |
+| Citation validity                                 | 98.7%                | 100%                 | 89.3%                | 100%                 |
+
+Citation validity:
+
+1. Pointers: 0 invalid pointers in both models.
+2. Copied quotes found in the document: 98.7 percent (Qwen) and 89.3 percent (Granite). The Granite figure includes empty and reworded quotes, which were not separated.
+
+A bias shift: in both models, the pointer format was right more often on questions whose gold answer is yes, and the copied quote format was right more often on gold no questions. The two effects roughly cancel in overall accuracy. This was an exploratory analysis and the reason was not tested.
+
+Checker and abstention (pointer answers, rule "accept unless contradiction"):
+
+1. Qwen: coverage 94 percent, accuracy 82.9 percent against 82.0 with no checker. It rejected 6 of 54 wrong answers.
+2. Granite: coverage 95 percent, accuracy 85.3 percent against 84.3. It rejected 5 of 47 wrong answers.
+
+Rule "accept only entailment" kept only 17 to 18 percent of pointer answers, at 87.3 percent (Qwen, 55 answers) and 90.4 percent (Granite, 52 answers). Those accepted sets are small and their accuracy ranges include the no checker accuracy. Copied quotes with the same checker reached 90.5 and 96.4 percent but at only 7 and 9 percent coverage.
+
+## Conclusions
+
+1. Pointer citations are always real text from the document, and they cost about 2.7 times fewer answer tokens, in two model families, with no accuracy loss.
+2. An off the shelf NLI checker adds little trust to pointer answers. It costs a lot of coverage and removes few wrong answers. So the pointer format makes citations verifiable and cheap. It does not make answers correct.
+3. The output format changes the yes and no balance, so accuracy should be reported by gold label.
+
+## Limitations
+
+1. Two open models of 7 to 8 billion parameters, 4 bit, one dataset, one yes or no format.
+2. The correct abstract is handed to the model. There is no retrieval step and no distractor documents.
+3. The claim writer is the same model as the answerer, and the NLI model is general, not medical.
+4. No human labeled sample, and PubMedQA labels are noisy.
+5. No correction for multiple tests, and no confidence intervals for the checker numbers.
+6. Only output tokens were counted.
+7. Urdu and other low resource languages are not covered. They are planned as a separate follow up.
+
+## Repository contents
+
+```
+README.md
+requirements.txt
+src/
+    build_dataset.py
+    prompts.py
+notebooks/
+    qwen_setup_helpers.py
+    qwen_run_systems_a_b.py
+    qwen_nli_check.py
+    granite_run_systems_a_b.py
+    granite_nli_check.py
+```
+
+Result files and the full abstract text are not included. The results came from notebook runs on Kaggle, and the files in `notebooks/` are the code from those runs. Running them regenerates the numbers above.
+
+Note on names: the copied quote prompt is called `SYSTEM_A` in `src/prompts.py` and `SYSTEM_A2` in the notebook files. It is the same text.
+
+## How to reproduce
+
+1. Install the packages in `requirements.txt`.
+2. Run `src/build_dataset.py`. It writes the development and fresh question files to a `data` folder. The notebook files read the fresh questions under the name `pubmedqa_fresh300.json`, so copy `data/fresh300.json` to that name in the working folder.
+3. Qwen: run `qwen_setup_helpers.py`, then `qwen_run_systems_a_b.py`, then `qwen_nli_check.py`, all in the same session.
+4. Granite: run `granite_run_systems_a_b.py`, then `granite_nli_check.py`, in the same session. Use a fresh session for Granite so the GPU memory is free.
+
+Exact model IDs:
+
+```
+Qwen/Qwen2.5-7B-Instruct
+ibm-granite/granite-3.3-8b-instruct
+MoritzLaurer/DeBERTa-v3-base-mnli-fever-anli
+```
+
+Dataset: `qiaojin/PubMedQA`, configuration `pqa_labeled`. Check its licence before redistributing abstract text.
+
+## Future work
+
+1. A test with retrieval, distractor documents and a larger question set.
+2. A medical NLI model or a judge calibrated against clinician labels.
+3. More model families and sizes.
+4. Testing why the output format shifts the yes and no balance.
+5. A multilingual extension (Urdu, Roman Urdu) with its own evaluation data.FZ
