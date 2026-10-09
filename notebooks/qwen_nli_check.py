@@ -32,9 +32,7 @@ def nli_check(premise, hypothesis):
     with torch.no_grad():
         probs = torch.softmax(nli_model(**enc).logits, dim=-1)[0]
     return labels[int(probs.argmax())]
-
-# In the original run the questions file was pubmedqa_fresh300.json
-# (build_dataset.py writes the same questions to data/fresh300.json).
+    
 fresh = {it["id"]: it for it in json.load(open("pubmedqa_fresh300.json"))}
 # Answers from qwen_run_systems_a_b.py. In the original run this file was read
 # from a Kaggle input folder. Change the path if yours is elsewhere.
