@@ -1,0 +1,6 @@
+datasets
+transformers
+accelerate
+torch
+sentencepiece
+bitsandbytes>=0.46.1
