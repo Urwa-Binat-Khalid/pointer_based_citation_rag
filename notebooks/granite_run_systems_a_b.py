@@ -4,7 +4,6 @@ Granite 3.3 8B Instruct: run System A (copied quote) and System B (pointer)
 on the fresh 300 questions. Self contained: loads the model, defines the helpers,
 runs both systems and prints accuracy, sign tests and bootstrap intervals.
 Needs: pip install -U "bitsandbytes>=0.46.1" transformers accelerate
-Writes results_fresh300_granite-3.3-8b-instruct.json and resumes if interrupted.
 """
 import json, os, re, random, torch
 from math import comb
