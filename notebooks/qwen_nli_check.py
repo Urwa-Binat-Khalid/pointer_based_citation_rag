@@ -4,8 +4,6 @@ Run qwen_setup_helpers.py first. It defines model and gen.
 For every answer, the same Qwen model rewrites question and answer as one claim.
 A separate DeBERTa NLI model then checks the claim against the pointed sentences
 (System B) or the copied quote (System A).
-Produces results_fresh300_C_qwen.json and prints the accept rule tables.
-Resumes from the saved file if interrupted.
 """
 import json, os, torch
 from transformers import AutoTokenizer as AT, AutoModelForSequenceClassification as AMS
