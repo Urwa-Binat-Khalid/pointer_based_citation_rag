@@ -34,9 +34,6 @@ def nli_check(premise, hypothesis):
     return labels[int(probs.argmax())]
     
 fresh = {it["id"]: it for it in json.load(open("pubmedqa_fresh300.json"))}
-# Answers from qwen_run_systems_a_b.py. In the original run this file was read
-# from a Kaggle input folder. Change the path if yours is elsewhere.
-base = json.load(open("results_fresh300.json"))
 OUT = "results_fresh300_C_qwen.json"
 done = {r["id"]: r for r in json.load(open(OUT))} if os.path.exists(OUT) else {}
 print("already done:", len(done))
