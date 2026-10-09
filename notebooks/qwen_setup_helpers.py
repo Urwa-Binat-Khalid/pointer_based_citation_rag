@@ -15,9 +15,6 @@ bnb = BitsAndBytesConfig(load_in_4bit=True, bnb_4bit_compute_dtype=torch.float16
 tok = AutoTokenizer.from_pretrained(MODEL)
 model = AutoModelForCausalLM.from_pretrained(MODEL, quantization_config=bnb, device_map="auto")
 
-items = json.load(open("pubmedqa_pointer_set.json"))
-yn_all = [it for it in items if it["gold_answer"] in ("yes", "no")][:150]
-
 SYSTEM_B = (
     "You answer biomedical yes/no questions using ONLY the numbered "
     "sentences provided. Do not write any quotes or citations in text. "
